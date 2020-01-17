@@ -11,9 +11,9 @@ public class test {
         }
         TimeUnit.SECONDS.sleep(1);
         Thread q = new alert_invoker(3);
-        System.out.println("Starting thread with identical content... ");
+        System.out.println("Starting thread with identical content after 1 sec... ");
         q.start();
-
+        System.out.println("Check the hashmap... ");
         TimeUnit.SECONDS.sleep(1);
         Thread t_out = new alert_out();
         t_out.start();
@@ -23,7 +23,7 @@ public class test {
         @Override
         public void run() {
             AlertUtil a = AlertUtil.getInstance();
-            a.print_alerts();
+            a.printAlerts();
         }
     }
 
@@ -35,7 +35,7 @@ public class test {
         @Override
         public void run() {
             AlertUtil a = AlertUtil.getInstance();
-            a.add_alert(new AlertUtil.Alert("default", String.valueOf(this.id)));
+            a.addAlert(String.valueOf(this.id), "default", "hahahaha123");
         }
     }
 }

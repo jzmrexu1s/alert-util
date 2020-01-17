@@ -1,5 +1,8 @@
 package alertutil;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,19 +15,21 @@ class AlertUtil {
         private static AlertUtil instance = new AlertUtil();
     }
 
-    public static class Rule {
-        private int expire_time;
+    public static AlertUtil getInstance() {
+        return Holder.instance;
+    }
+    public static class Rule { }
 
-        public Rule(int expire_time) {
-            this.expire_time = expire_time;
+    public static class timeLimitRule extends Rule {
+        private int expireTime;
+        public timeLimitRule(int expireTime) {
+            this.expireTime = expireTime;
         }
-
-        public int getExpire_time() {
-            return expire_time;
+        public int getExpireTime() {
+            return expireTime;
         }
-
-        public void setExpire_time(int expire_time) {
-            this.expire_time = expire_time;
+        public void setExpireTime(int expireTime) {
+            this.expireTime = expireTime;
         }
     }
 
@@ -32,42 +37,40 @@ class AlertUtil {
 
     private AlertUtil() {
         rules = new HashMap<String, Rule>();
-        rules.put("default", new Rule(5000));
+        addRule("default", "timeLimit", 1000);
     }
 
-    public static AlertUtil getInstance() {
-        return Holder.instance;
+    public boolean addRule(String ruleName, String ruleType, Object... params) {
+        try {
+            Class<?> cl = Class.forName(ruleType + "Rule");
+            Constructor<?> cons = cl.getConstructor();
+            Rule rule = (Rule) cons.newInstance(params);
+            rules.put("ruleName", rule);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static class Alert {
-        private Rule rule;
+        private String ruleName;
         private String content;
         private long timestamp;
 
-        public Alert(Rule rule, String content) {
-            this.rule = rule;
+        public Alert(String ruleName, String content) {
+            this.ruleName = ruleName;
             this.content = content;
             this.timestamp = System.currentTimeMillis();
         }
-
-        public Alert(String rule_name, String content) {
-            this.rule = rules.get(rule_name);
-            this.content = content;
-            this.timestamp = System.currentTimeMillis();
+        public String getRuleName() {
+            return ruleName;
         }
-
-        public Rule getRule() {
-            return rule;
+        public void setRuleName(String ruleName) {
+            this.ruleName = ruleName;
         }
-
-        public void setRule(Rule rule) {
-            this.rule = rule;
-        }
-
         public String getContent() {
             return content;
         }
-
         public void setContent(String content) {
             this.content = content;
         }
@@ -75,20 +78,19 @@ class AlertUtil {
 
     private static Map<String, Alert> alerts = new ConcurrentHashMap<String, Alert>();
 
-    public void add_alert(Alert alert) {
-        String key = String.valueOf(alert.content.hashCode());
+    public void addAlert(String key, String ruleName, String content) {
         if (alerts.get(key) == null) {
+            Alert alert = new Alert(ruleName, content);
             alerts.put(key, alert);
             System.out.println("In thread " + alert.content + " key= " + key + " " + alert.timestamp);
         }
     }
 
-    public void print_alerts() {
+    public void printAlerts() {
         System.out.println("last size " + alerts.size() + ". Contents: ");
-        for (int i = 0; i < 5; i ++) {
-            Alert a = alerts.get(String.valueOf(String.valueOf(i).hashCode()));
+        for (int i = 0; i < alerts.size(); i ++) {
+            Alert a = alerts.get(String.valueOf(i));
             System.out.println(a.content + " " + a.timestamp);
         }
     }
-
 }
