@@ -9,10 +9,14 @@ public class test {
             System.out.println("Starting thread " + i + "... ");
             t.start();
         }
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.SECONDS.sleep(2);
         Thread q = new alert_invoker(3);
         System.out.println("Starting thread with identical content after 1 sec... ");
         q.start();
+        TimeUnit.SECONDS.sleep(1);
+        Thread r = new alert_refresh();
+        System.out.println("Starting thread to refresh... ");
+        r.start();
         System.out.println("Check the hashmap... ");
         TimeUnit.SECONDS.sleep(1);
         Thread t_out = new alert_out();
@@ -23,7 +27,15 @@ public class test {
         @Override
         public void run() {
             AlertUtil a = AlertUtil.getInstance();
-            a.printAlerts();
+            a.printAllAlerts();
+        }
+    }
+
+    static class alert_refresh extends Thread {
+        @Override
+        public void run() {
+            AlertUtil a = AlertUtil.getInstance();
+            a.refresh();
         }
     }
 
@@ -35,7 +47,7 @@ public class test {
         @Override
         public void run() {
             AlertUtil a = AlertUtil.getInstance();
-            a.addAlert(String.valueOf(this.id), "default", "hahahaha123");
+            a.addAlert(String.valueOf(this.id), "default", "hahahaha123", false);
         }
     }
 }

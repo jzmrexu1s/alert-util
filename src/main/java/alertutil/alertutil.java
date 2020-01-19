@@ -35,7 +35,7 @@ class AlertUtil {
 
         @Override
         public boolean checkRemove(Object... params) {
-            return (System.currentTimeMillis() - (int)params[0] >= expireTime);
+            return (System.currentTimeMillis() - (long)params[0] >= expireTime);
         }
 
         @Override
@@ -91,27 +91,33 @@ class AlertUtil {
 
     private static Map<String, Alert> alerts = new ConcurrentHashMap<String, Alert>();
 
-    public void addAlert(String key, String ruleName, String content) {
+    public void addAlert(String key, String ruleName, String content, boolean refresh) {
         if (alerts.get(key) == null) {
             Alert alert = new Alert(ruleName, content);
             alerts.put(key, alert);
             System.out.println("In thread " + alert.content + " key= " + key + " " + alert.params.get(0));
         }
+        if (refresh) { refresh(); }
     }
 
     public void refresh() {
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
             String ruleName = alert.getRuleName();
+            Rule rule = rules.get(ruleName);
             try {
-                Class<?> cl = Class.forName("alertutil.AlertUtil$" + ruleName);
+                Class<?> cl = rule.getClass();
                 Method m = cl.getMethod("checkRemove", Object[].class);
-//                m.invoke(null, );
+                Object[] l = new Object[alert.params.size()];
+                if ((boolean) m.invoke(rule, new Object[]{alert.params.toArray(l)})) {
+                    System.out.println("Alert with key " + key + " has been removed");
+                    alerts.remove(key);
+                }
             } catch (Exception e) {e.printStackTrace();}
         }
     }
 
-    public void printAlerts() {
+    public void printAllAlerts() {
         System.out.println("last size " + alerts.size() + ". Contents: ");
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
