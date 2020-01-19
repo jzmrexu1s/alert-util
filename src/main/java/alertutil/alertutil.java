@@ -20,9 +20,9 @@ class AlertUtil {
     }
     public static class Rule { }
 
-    public static class timeLimitRule extends Rule {
+    public static class TimeLimitRule extends Rule {
         private int expireTime;
-        public timeLimitRule(int expireTime) {
+        public TimeLimitRule(int expireTime) {
             this.expireTime = expireTime;
         }
         public int getExpireTime() {
@@ -37,17 +37,20 @@ class AlertUtil {
 
     private AlertUtil() {
         rules = new HashMap<String, Rule>();
-        addRule("default", "timeLimit", 1000);
+        System.out.println(addRule("default", "TimeLimit", 1000));
     }
 
     public boolean addRule(String ruleName, String ruleType, Object... params) {
         try {
-            Class<?> cl = Class.forName(ruleType + "Rule");
-            Constructor<?> cons = cl.getConstructor();
-            Rule rule = (Rule) cons.newInstance(params);
-            rules.put("ruleName", rule);
+            Class<?> cl = Class.forName("alertutil.AlertUtil$" + ruleType + "Rule");
+            Constructor<?>[] cons = cl.getConstructors();
+            Rule rule = (Rule) cons[0].newInstance(params);
+//            TimeLimitRule rule = new TimeLimitRule(1000);
+//            System.out.println(rule.getClass());
+            rules.put(ruleName, rule);
             return true;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
@@ -92,5 +95,10 @@ class AlertUtil {
             Alert a = alerts.get(String.valueOf(i));
             System.out.println(a.content + " " + a.timestamp);
         }
+    }
+
+    public void getRuleAndPrint(String ruleName) {
+        TimeLimitRule rule = (TimeLimitRule) rules.get(ruleName);
+        System.out.println(rule.getExpireTime());
     }
 }
