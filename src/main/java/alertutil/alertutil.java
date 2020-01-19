@@ -3,10 +3,7 @@ package alertutil;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -18,18 +15,32 @@ class AlertUtil {
     public static AlertUtil getInstance() {
         return Holder.instance;
     }
-    public static class Rule { }
+    public static abstract class Rule {
+        public abstract boolean checkRemove(Object... params);  // If the alert should be removed from alerts
+        public abstract void action();      // How to send email
+    }
 
     public static class TimeLimitRule extends Rule {
         private int expireTime;
         public TimeLimitRule(int expireTime) {
             this.expireTime = expireTime;
+
         }
-        public int getExpireTime() {
+        private int getExpireTime() {
             return expireTime;
         }
-        public void setExpireTime(int expireTime) {
+        private void setExpireTime(int expireTime) {
             this.expireTime = expireTime;
+        }
+
+        @Override
+        public boolean checkRemove(Object... params) {
+            return (System.currentTimeMillis() - (int)params[0] >= expireTime);
+        }
+
+        @Override
+        public void action() {
+            System.out.println("Should send an email! ");
         }
     }
 
@@ -45,8 +56,6 @@ class AlertUtil {
             Class<?> cl = Class.forName("alertutil.AlertUtil$" + ruleType + "Rule");
             Constructor<?>[] cons = cl.getConstructors();
             Rule rule = (Rule) cons[0].newInstance(params);
-//            TimeLimitRule rule = new TimeLimitRule(1000);
-//            System.out.println(rule.getClass());
             rules.put(ruleName, rule);
             return true;
         } catch (Exception e) {
@@ -58,12 +67,13 @@ class AlertUtil {
     public static class Alert {
         private String ruleName;
         private String content;
-        private long timestamp;
+        private ArrayList<Object> params;
 
         public Alert(String ruleName, String content) {
             this.ruleName = ruleName;
             this.content = content;
-            this.timestamp = System.currentTimeMillis();
+            this.params = new ArrayList<>();
+            this.params.add(System.currentTimeMillis());
         }
         public String getRuleName() {
             return ruleName;
@@ -85,19 +95,31 @@ class AlertUtil {
         if (alerts.get(key) == null) {
             Alert alert = new Alert(ruleName, content);
             alerts.put(key, alert);
-            System.out.println("In thread " + alert.content + " key= " + key + " " + alert.timestamp);
+            System.out.println("In thread " + alert.content + " key= " + key + " " + alert.params.get(0));
+        }
+    }
+
+    public void refresh() {
+        for (String key: alerts.keySet()) {
+            Alert alert = alerts.get(key);
+            String ruleName = alert.getRuleName();
+            try {
+                Class<?> cl = Class.forName("alertutil.AlertUtil$" + ruleName);
+                Method m = cl.getMethod("checkRemove", Object[].class);
+//                m.invoke(null, );
+            } catch (Exception e) {e.printStackTrace();}
         }
     }
 
     public void printAlerts() {
         System.out.println("last size " + alerts.size() + ". Contents: ");
-        for (int i = 0; i < alerts.size(); i ++) {
-            Alert a = alerts.get(String.valueOf(i));
-            System.out.println(a.content + " " + a.timestamp);
+        for (String key: alerts.keySet()) {
+            Alert alert = alerts.get(key);
+            System.out.println(alert.content + " " + alert.params.get(0));
         }
     }
 
-    public void getRuleAndPrint(String ruleName) {
+    public void getTimeLimitRuleAndPrint(String ruleName) {
         TimeLimitRule rule = (TimeLimitRule) rules.get(ruleName);
         System.out.println(rule.getExpireTime());
     }

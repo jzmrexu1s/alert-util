@@ -13,7 +13,7 @@ public class testAddRule {
         public void run() {
             AlertUtil a = AlertUtil.getInstance();
             a.addRule("testNewRule", "TimeLimit", 800);
-            a.getRuleAndPrint("testNewRule");
+            a.getTimeLimitRuleAndPrint("testNewRule");
         }
     }
 }
