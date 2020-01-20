@@ -57,9 +57,6 @@ public class test {
         System.out.println("Run a thread to print all alerts. ");
         Thread o4 = new alert_out();
         o4.start();
-
-
-
     }
 
     public static void basic_test() throws InterruptedException {

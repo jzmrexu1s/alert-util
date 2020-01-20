@@ -3,6 +3,7 @@ package alertutil;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.channels.ScatteringByteChannel;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,10 +16,15 @@ class AlertUtil {
     public static AlertUtil getInstance() {
         return Holder.instance;
     }
+
+    private final Object lock = false;
+
     public static abstract class Rule {
         public abstract boolean checkRemove(Object... params);  // If the alert should be removed from alerts
         public abstract void action();      // How to send email
     }
+
+    private boolean flg = false;
 
     public static class TimeLimitRule extends Rule {
         private int expireTime;
@@ -95,7 +101,7 @@ class AlertUtil {
 
     private static Map<String, Alert> alerts = new ConcurrentHashMap<String, Alert>();
 
-    public void addAlert(String key, String ruleName, String content, boolean refresh) {
+    public synchronized void addAlert(String key, String ruleName, String content, boolean refresh) {
         if (alerts.get(key) == null) {
             Alert alert = new Alert(ruleName, content);
             alerts.put(key, alert);
@@ -103,7 +109,7 @@ class AlertUtil {
         }
         if (refresh) { refresh(); }
     }
-    public void refresh() {
+    public synchronized void refresh() {
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
             String ruleName = alert.getRuleName();
@@ -120,7 +126,7 @@ class AlertUtil {
         }
     }
 
-    public void printAllAlerts() {
+    public synchronized void printAllAlerts() {
         System.out.println("↓↓↓↓↓ Lengths of alerts: " + alerts.size() + " ↓↓↓↓↓");
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
