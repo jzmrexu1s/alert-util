@@ -35,12 +35,16 @@ class AlertUtil {
 
         @Override
         public boolean checkRemove(Object... params) {
-            return (System.currentTimeMillis() - (long)params[0] >= expireTime);
+            if (System.currentTimeMillis() - (long)params[0] >= expireTime) {
+                action();
+                return true;
+            }
+            return false;
         }
 
         @Override
         public void action() {
-            System.out.println("Should send an email! ");
+            System.out.println("action: Should send an email right now. ");
         }
     }
 
@@ -48,7 +52,7 @@ class AlertUtil {
 
     private AlertUtil() {
         rules = new HashMap<String, Rule>();
-        System.out.println(addRule("default", "TimeLimit", 1000));
+        addRule("default", "TimeLimit", 1000);
     }
 
     public boolean addRule(String ruleName, String ruleType, Object... params) {
@@ -95,11 +99,10 @@ class AlertUtil {
         if (alerts.get(key) == null) {
             Alert alert = new Alert(ruleName, content);
             alerts.put(key, alert);
-            System.out.println("In thread " + alert.content + " key= " + key + " " + alert.params.get(0));
+            System.out.println("addAlert: key= " + key + " " + "timestamp: " + alert.params.get(0));
         }
         if (refresh) { refresh(); }
     }
-
     public void refresh() {
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
@@ -110,7 +113,7 @@ class AlertUtil {
                 Method m = cl.getMethod("checkRemove", Object[].class);
                 Object[] l = new Object[alert.params.size()];
                 if ((boolean) m.invoke(rule, new Object[]{alert.params.toArray(l)})) {
-                    System.out.println("Alert with key " + key + " has been removed");
+                    System.out.println("refresh: Alert with key " + key + " has been removed");
                     alerts.remove(key);
                 }
             } catch (Exception e) {e.printStackTrace();}
@@ -118,15 +121,10 @@ class AlertUtil {
     }
 
     public void printAllAlerts() {
-        System.out.println("last size " + alerts.size() + ". Contents: ");
+        System.out.println("↓↓↓↓↓ Lengths of alerts: " + alerts.size() + " ↓↓↓↓↓");
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
-            System.out.println(alert.content + " " + alert.params.get(0));
+            System.out.println("Key: " + key + " Content: " + alert.content + " Params: " + alert.params);
         }
-    }
-
-    public void getTimeLimitRuleAndPrint(String ruleName) {
-        TimeLimitRule rule = (TimeLimitRule) rules.get(ruleName);
-        System.out.println(rule.getExpireTime());
     }
 }
