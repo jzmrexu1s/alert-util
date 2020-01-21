@@ -1,13 +1,7 @@
 package alertutil;
 
-import java.io.ObjectStreamException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.nio.channels.ScatteringByteChannel;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class AlertUtil {
     private static class Holder {
@@ -43,23 +37,24 @@ class AlertUtil {
         if (alerts.get(key) == null) {
             Alert alert = new Alert(ruleName, content, new Object[]{System.currentTimeMillis()});
             alerts.put(key, alert);
+            rules.get(ruleName).action(alert);
             System.out.println("addAlert: key= " + key + " " + "timestamp: " + alert.getParams()[0]);
         }
         if (refresh) { refresh(); }
     }
+
     // TODO: synchronized or not?
     public synchronized void refresh() {
-        for (String key: alerts.keySet()) {
-            Alert alert = alerts.get(key);
-            String ruleName = alert.getRuleName();
-            Rule rule = rules.get(ruleName);
-            try {
+        try {
+            for (String key: alerts.keySet()) {
+                Alert alert = alerts.get(key);
+                String ruleName = alert.getRuleName();
+                Rule rule = rules.get(ruleName);
                 if (rule.checkRemove(alert.getParams())) {
-                    System.out.println("refresh: Alert with key " + key + " has been removed");
                     alerts.remove(key);
                 }
-            } catch (Exception e) {e.printStackTrace();}
-        }
+            }
+        } catch (Exception e) {e.printStackTrace();}
     }
 
     public synchronized void printAllAlerts() {
@@ -73,7 +68,7 @@ class AlertUtil {
 
 abstract class Rule {
     public abstract boolean checkRemove(Object... params);  // If the alert should be removed from alerts
-    public abstract void action();      // How to send email
+    public abstract void action(Alert alert);      // How to send email
 }
 
 class Alert {
@@ -107,7 +102,6 @@ class TimeLimitRule extends Rule {
     private int expireTime;
     public TimeLimitRule(int expireTime) {
         this.expireTime = expireTime;
-
     }
     private int getExpireTime() {
         return expireTime;
@@ -118,17 +112,12 @@ class TimeLimitRule extends Rule {
 
     @Override
     public boolean checkRemove(Object... params) {
-        if (System.currentTimeMillis() - (long)params[0] >= expireTime) {
+        return (System.currentTimeMillis() - (long)params[0] >= expireTime);
             // TODO: Check if reach n times.
-            // TODO: Update the list and variables here.
-            action();
-            return true;
-        }
-        return false;
     }
 
     @Override
-    public void action() {
-        System.out.println("action: Should send an email right now. ");
+    public void action(Alert alert) {
+        System.out.println("action:" + "Should send an email right now. Content: " + alert.getContent());
     }
 }
