@@ -4,94 +4,108 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 class AlertUtil {
-    private static class Holder {
-        private static AlertUtil instance = new AlertUtil();
+    public static synchronized void addAlert(String key, String content, int expireTime, int expireCount) {
+        AlertUtilHandler.addAlert(key, content, expireTime, expireCount);
+    }
+    public static synchronized void printAllAlerts() {
+        AlertUtilHandler.printAllAlerts();
+    }
+    public static synchronized void refresh() {
+        AlertUtilHandler.refresh();
+    }
+}
+
+class AlertUtilHandler {
+
+    private static Map<String, AlertInfo> alerts = new ConcurrentHashMap<String, AlertInfo>(); // TODO: Only save keys in alerts.
+    public static Map<String, AlertInfo> getAlerts() {
+        return alerts;
     }
 
-    public static AlertUtil getInstance() {
-        return Holder.instance;
+    public void setAlerts(ConcurrentHashMap<String, AlertInfo> alerts) {
+        AlertUtilHandler.alerts = alerts;
     }
 
-    private AlertUtil() {
-        rules = new HashMap<String, Rule>();
-        addRule("default", 1000, 1);
-    }
-
-    private static Map<String, Rule> rules;
-    private static Map<String, Alert> alerts = new ConcurrentHashMap<String, Alert>(); // TODO: Only save keys in alerts.
-
-    public boolean addRule(String ruleName, Object... params) {
+    public static Rule makeRule(Object... params) {
         if (params.length == 1) {
-            rules.put(ruleName, new LimitRule((int)params[0]));
-            return true;
+            return(new LimitRule((int)params[0]));
         }
         if (params.length == 2) {
-            rules.put(ruleName, new LimitRule((int)params[0], (int)params[1]));
-            return true;
+            return(new LimitRule((int)params[0], (int)params[1]));
         }
-        return false;
+        return(new LimitRule(1000));
     }
 
-    public synchronized void addAlert(String key, String ruleName, String content, boolean refresh) {
+    public static synchronized void addAlert(String key, String content, int expireTime, int expireCount) {
         if (alerts.get(key) == null) {
-            Alert alert = new Alert(ruleName, content);
-            alerts.put(key, alert);
-            rules.get(ruleName).action(alert);
+            Rule rule = makeRule(expireTime, expireCount);
+            Alert alert = new Alert(rule, content);
+            alerts.put(key, (AlertInfo)alert);
             System.out.println("addAlert: key= " + key + " " + "timestamp: " + alert.getTimeStamp());
+        } else {
+            AlertInfo alert = alerts.get(key);
+            alert.addCount();
         }
-        if (refresh) { refresh(); }
+        refresh();
     }
 
     // TODO: synchronized or not?
-    public synchronized void refresh() {
+    public static synchronized void refresh() {
         try {
             for (String key: alerts.keySet()) {
-                Alert alert = alerts.get(key);
-                String ruleName = alert.getRuleName();
-                Rule rule = rules.get(ruleName);
+                AlertInfo alert = alerts.get(key);
+                Rule rule = alert.getRule();
                 if (rule.checkRemove(alert)) {
                     alerts.remove(key);
-                } else { rule.setAlert(alert); }
+                    System.out.println("Remove: alert with key " + key + " has been removed. ");
+                }
+                else if (!rule.checkReachCount(alert)) {
+                    rule.setAlert(alert);
+                }
             }
         } catch (Exception e) {e.printStackTrace();}
     }
 
-    public synchronized void printAllAlerts() {
+    public static synchronized void printAllAlerts() {
         System.out.println("↓↓↓↓↓ Lengths of alerts: " + alerts.size() + " ↓↓↓↓↓");
         for (String key: alerts.keySet()) {
-            Alert alert = alerts.get(key);
-            System.out.println("Key: " + key + " Content: " + alert.getContent() + " Params: " + alert.getContent());
+            AlertInfo alert = alerts.get(key);
+            System.out.println("Key: " + key + " TimeStamp: " + alert.getTimeStamp() + " Count: " + alert.getCount());
         }
     }
 }
 
 abstract class Rule {
-    public abstract boolean checkRemove(Alert alert);  // If the alert should be removed from alerts
-    public abstract void action(Alert alert);               // How to send email
-    public abstract void setAlert(Alert alert);             // How to update the params in an alert
+    public abstract boolean checkRemove(AlertInfo alert);       // If the alert should be removed from alerts
+    public abstract boolean checkReachCount(AlertInfo alert);   // If the alert reaches its count limit
+    public abstract void action(Alert alert);                   // How to send email
+    public abstract void setAlert(AlertInfo alert);             // How to update the params in an alert
 }
 
-class Alert {
-    private String ruleName;
-    private String content;
+class AlertInfo {
+    private Rule rule;
     private long timeStamp;
     private int count;
-
-    public Alert(String ruleName, String content) {
-        this.ruleName = ruleName;
-        this.content = content;
+    public AlertInfo(Rule rule) {
+        this.rule = rule;
         this.timeStamp = System.currentTimeMillis();
         this.count = 0;
     }
-
-    public String getRuleName() {
-        return ruleName;
-    }
-    public String getContent() { return content; }
+    public Rule getRule() { return rule; }
     public long getTimeStamp() { return timeStamp; }
     public void addCount() { this.count ++; }
     public int getCount() { return count; }
+
+}
+
+class Alert extends AlertInfo {
+    private String content;
+    public String getContent() { return content; }
     public void setContent(String content) {
+        this.content = content;
+    }
+    public Alert(Rule rule, String content) {
+        super(rule);
         this.content = content;
     }
 }
@@ -110,9 +124,14 @@ class LimitRule extends Rule {
     }
 
     @Override
-    public boolean checkRemove(Alert alert) {
+    public boolean checkRemove(AlertInfo alert) {
         return (System.currentTimeMillis() - alert.getTimeStamp() >= expireTime);
             // TODO: Check if reach n times.
+    }
+
+    @Override
+    public boolean checkReachCount(AlertInfo alert) {
+        return (alert.getCount() >= expireCount);
     }
 
     @Override
@@ -121,7 +140,7 @@ class LimitRule extends Rule {
     }
 
     @Override
-    public void setAlert(Alert alert) {
+    public void setAlert(AlertInfo alert) {
         alert.addCount();
     }
 }
