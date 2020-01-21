@@ -4,8 +4,14 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 class AlertUtil {
-    public static synchronized void addAlert(String key, String content, int expireTime, int expireCount) {
-        AlertUtilHandler.addAlert(key, content, expireTime, expireCount);
+    public static synchronized void addLimitAlert(String key, String content) {
+        AlertUtilHandler.addLimitAlert(key, content, 1000, 1);
+    }
+    public static synchronized void addLimitAlert(String key, String content, int expireTime) {
+        AlertUtilHandler.addLimitAlert(key, content, expireTime, 1);
+    }
+    public static synchronized void addLimitAlert(String key, String content, int expireTime, int expireCount) {
+        AlertUtilHandler.addLimitAlert(key, content, expireTime, expireCount);
     }
     public static synchronized void printAllAlerts() {
         AlertUtilHandler.printAllAlerts();
@@ -16,29 +22,16 @@ class AlertUtil {
 }
 
 class AlertUtilHandler {
-
-    private static Map<String, AlertInfo> alerts = new ConcurrentHashMap<String, AlertInfo>(); // TODO: Only save keys in alerts.
-    public static Map<String, AlertInfo> getAlerts() {
-        return alerts;
-    }
+    private static Map<String, AlertInfo> alerts = new ConcurrentHashMap<String, AlertInfo>();
+    public static Map<String, AlertInfo> getAlerts() { return alerts; }
 
     public void setAlerts(ConcurrentHashMap<String, AlertInfo> alerts) {
         AlertUtilHandler.alerts = alerts;
     }
 
-    public static Rule makeRule(Object... params) {
-        if (params.length == 1) {
-            return(new LimitRule((int)params[0]));
-        }
-        if (params.length == 2) {
-            return(new LimitRule((int)params[0], (int)params[1]));
-        }
-        return(new LimitRule(1000));
-    }
-
-    public static synchronized void addAlert(String key, String content, int expireTime, int expireCount) {
+    public static synchronized void addLimitAlert(String key, String content, int expireTime, int expireCount) {
         if (alerts.get(key) == null) {
-            Rule rule = makeRule(expireTime, expireCount);
+            Rule rule = new LimitRule(expireTime, expireCount);
             Alert alert = new Alert(rule, content);
             alerts.put(key, (AlertInfo)alert);
             System.out.println("addAlert: key= " + key + " " + "timestamp: " + alert.getTimeStamp());
@@ -119,14 +112,9 @@ class LimitRule extends Rule {
         this.expireCount = expireCount;
     }
 
-    public LimitRule(int expireTime) {
-        this.expireTime = expireTime;
-    }
-
     @Override
     public boolean checkRemove(AlertInfo alert) {
         return (System.currentTimeMillis() - alert.getTimeStamp() >= expireTime);
-            // TODO: Check if reach n times.
     }
 
     @Override

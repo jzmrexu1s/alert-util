@@ -97,7 +97,7 @@ public class test {
 
         @Override
         public void run() {
-            AlertUtil.addAlert(id, content, timeLimit, countLimit);
+            AlertUtil.addLimitAlert(id, content, timeLimit, countLimit);
         }
     }
 
