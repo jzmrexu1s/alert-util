@@ -10,7 +10,7 @@ public class test {
 
     public static void remove_test() throws InterruptedException {
         Thread a1 = new ruleAdder("testRule", "TimeLimit", new Object[]{2000});
-        System.out.println("Run a thread to create new rule. The alert will be removed in 2 sec after it was added to a list of alerts. ");
+        System.out.println("Run a thread to create new rule: The alert will be removed in 2 sec after it was added to a list of alerts. ");
         System.out.println("(In the default rule, alert will be removed in 1 sec after it was added to a list of alerts. )");
         a1.start();
         System.out.println("------0.0 sec------");
