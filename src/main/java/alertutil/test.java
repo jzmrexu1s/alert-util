@@ -5,6 +5,7 @@ import java.util.concurrent.TimeUnit;
 public class test {
     public static void main(String[] args) throws InterruptedException {
         remove_test();
+        // func(id, content, timelimit, quantitylimit)
     }
 
     public static void remove_test() throws InterruptedException {

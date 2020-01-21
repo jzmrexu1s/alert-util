@@ -17,15 +17,10 @@ class AlertUtil {
         return Holder.instance;
     }
 
-    private final Object lock = false;
-
     public static abstract class Rule {
         public abstract boolean checkRemove(Object... params);  // If the alert should be removed from alerts
         public abstract void action();      // How to send email
     }
-
-    private boolean flg = false;
-
     public static class TimeLimitRule extends Rule {
         private int expireTime;
         public TimeLimitRule(int expireTime) {
@@ -42,6 +37,8 @@ class AlertUtil {
         @Override
         public boolean checkRemove(Object... params) {
             if (System.currentTimeMillis() - (long)params[0] >= expireTime) {
+                // TODO: Check if reach n times.
+                // TODO: Update the list and variables here.
                 action();
                 return true;
             }
@@ -63,6 +60,7 @@ class AlertUtil {
 
     public boolean addRule(String ruleName, String ruleType, Object... params) {
         try {
+            // TODO: cancel reflects.
             Class<?> cl = Class.forName("alertutil.AlertUtil$" + ruleType + "Rule");
             Constructor<?>[] cons = cl.getConstructors();
             Rule rule = (Rule) cons[0].newInstance(params);
@@ -99,7 +97,7 @@ class AlertUtil {
         }
     }
 
-    private static Map<String, Alert> alerts = new ConcurrentHashMap<String, Alert>();
+    private static Map<String, Alert> alerts = new ConcurrentHashMap<String, Alert>(); // TODO: Only save keys in alerts.
 
     public synchronized void addAlert(String key, String ruleName, String content, boolean refresh) {
         if (alerts.get(key) == null) {
@@ -109,16 +107,15 @@ class AlertUtil {
         }
         if (refresh) { refresh(); }
     }
+    // TODO: synchronized or not?
     public synchronized void refresh() {
         for (String key: alerts.keySet()) {
             Alert alert = alerts.get(key);
             String ruleName = alert.getRuleName();
             Rule rule = rules.get(ruleName);
+            Object[] l = new Object[alert.params.size()];
             try {
-                Class<?> cl = rule.getClass();
-                Method m = cl.getMethod("checkRemove", Object[].class);
-                Object[] l = new Object[alert.params.size()];
-                if ((boolean) m.invoke(rule, new Object[]{alert.params.toArray(l)})) {
+                if (rule.checkRemove(alert.params.toArray(l))) {
                     System.out.println("refresh: Alert with key " + key + " has been removed");
                     alerts.remove(key);
                 }
