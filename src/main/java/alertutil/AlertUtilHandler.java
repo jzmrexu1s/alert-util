@@ -5,13 +5,32 @@ import java.util.concurrent.ConcurrentHashMap;
 
 class AlertUtilHandler {
     private static Map<String, AlertInfo> alerts = new ConcurrentHashMap<String, AlertInfo>();
-    public static Map<String, AlertInfo> getAlerts() { return alerts; }
+    private static volatile boolean refresherStarted = false;
+    public static void initRefresher() {
+        if (!refresherStarted) {
+            Thread t = new Thread() {
+                public void run() {
+                    while(true) {
+                        AlertUtil.refresh();
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) { break; }
+                    }
+                }
+            };
+            t.setDaemon(true);
+            try {t.start();} catch (Exception e) {e.printStackTrace();}
+            refresherStarted = true;
+            System.out.println("Refresher started. "); }
+        }
+
 
     public void setAlerts(ConcurrentHashMap<String, AlertInfo> alerts) {
         AlertUtilHandler.alerts = alerts;
     }
 
     public static void addLimitAlert(String key, String content, int expireTime, int expireCount) {
+        initRefresher();
         if (alerts.get(key) == null) {
             Rule rule = new LimitRule(expireTime, expireCount);
             AlertInfo alert = new AlertInfo(rule);
