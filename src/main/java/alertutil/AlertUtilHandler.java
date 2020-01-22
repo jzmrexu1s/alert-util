@@ -53,6 +53,7 @@ class AlertUtilHandler {
         try {
             for (String key: alerts.keySet()) {
                 AlertInfo alert = alerts.get(key);
+                if (alert == null) return;
                 Rule rule = alert.getRule();
                 if (rule.checkRemove(alert)) {
                     alerts.remove(key);
