@@ -21,21 +21,13 @@
         </plugins>
     </build>
 
-<!--    <dependencies>-->
-<!--        <dependency>-->
-<!--            <groupId>com.google.guava</groupId>-->
-<!--            <artifactId>guava</artifactId>-->
-<!--            <version>28.2-jre</version>-->
-<!--            &lt;!&ndash; or, for Android: &ndash;&gt;-->
-<!--&lt;!&ndash;            <version>28.2-android</version>&ndash;&gt;-->
-<!--        </dependency>-->
-<!--        <dependency>-->
-<!--            <groupId>com.alibaba.csp</groupId>-->
-<!--            <artifactId>sentinel-core</artifactId>-->
-<!--            <version>1.7.1</version>-->
-<!--        </dependency>-->
-
-<!--    </dependencies>-->
+    <dependencies>
+       <dependency>
+           <groupId>com.alibaba</groupId>
+           <artifactId>fastjson</artifactId>
+           <version>1.2.51</version>
+        </dependency>
+    </dependencies>
 
 
 </project>

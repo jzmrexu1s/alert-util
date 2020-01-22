@@ -1,22 +1,25 @@
 package alertutil;
 
+import com.alibaba.fastjson.JSONArray;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 class AlertUtil {
-    public static synchronized void addLimitAlert(String key, String content) {
+    public static void addLimitAlert(String key, String content) {
         AlertUtilHandler.addLimitAlert(key, content, 1000, 1);
     }
-    public static synchronized void addLimitAlert(String key, String content, int expireTime) {
+    public static void addLimitAlert(String key, String content, int expireTime) {
         AlertUtilHandler.addLimitAlert(key, content, expireTime, 1);
     }
-    public static synchronized void addLimitAlert(String key, String content, int expireTime, int expireCount) {
+    public static void addLimitAlert(String key, String content, int expireTime, int expireCount) {
         AlertUtilHandler.addLimitAlert(key, content, expireTime, expireCount);
     }
-    public static synchronized void printAllAlerts() {
+    public static void printAllAlerts() {
         AlertUtilHandler.printAllAlerts();
     }
-    public static synchronized void refresh() {
+    public static void refresh() {
         AlertUtilHandler.refresh();
     }
 }
@@ -29,7 +32,7 @@ class AlertUtilHandler {
         AlertUtilHandler.alerts = alerts;
     }
 
-    public static synchronized void addLimitAlert(String key, String content, int expireTime, int expireCount) {
+    public static void addLimitAlert(String key, String content, int expireTime, int expireCount) {
         if (alerts.get(key) == null) {
             Rule rule = new LimitRule(expireTime, expireCount);
             Alert alert = new Alert(rule, content);
@@ -42,8 +45,7 @@ class AlertUtilHandler {
         refresh();
     }
 
-    // TODO: synchronized or not?
-    public static synchronized void refresh() {
+    public static void refresh() {
         try {
             for (String key: alerts.keySet()) {
                 AlertInfo alert = alerts.get(key);
@@ -59,7 +61,7 @@ class AlertUtilHandler {
         } catch (Exception e) {e.printStackTrace();}
     }
 
-    public static synchronized void printAllAlerts() {
+    public static void printAllAlerts() {
         System.out.println("↓↓↓↓↓ Lengths of alerts: " + alerts.size() + " ↓↓↓↓↓");
         for (String key: alerts.keySet()) {
             AlertInfo alert = alerts.get(key);
@@ -69,7 +71,7 @@ class AlertUtilHandler {
 }
 
 abstract class Rule {
-    public abstract boolean checkRemove(AlertInfo alert);       // If the alert should be removed from alerts
+    public abstract boolean checkRemove(AlertInfo alert);        // If the alert should be removed from alerts
     public abstract boolean checkReachCount(AlertInfo alert);   // If the alert reaches its count limit
     public abstract void action(Alert alert);                   // How to send email
     public abstract void setAlert(AlertInfo alert);             // How to update the params in an alert
