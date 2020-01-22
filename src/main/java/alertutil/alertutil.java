@@ -48,7 +48,7 @@ class AlertUtilHandler {
                 rule.setAlert(alert);
             }
         }
-        refresh();
+//        refresh();
     }
 
     public static void refresh() {
@@ -93,20 +93,8 @@ class AlertInfo {
     public long getTimeStamp() { return timeStamp; }
     public void addCount() { this.count ++; }
     public int getCount() { return count; }
-
 }
 
-class Alert extends AlertInfo {
-    private String content;
-    public String getContent() { return content; }
-    public void setContent(String content) {
-        this.content = content;
-    }
-    public Alert(Rule rule, String content) {
-        super(rule);
-        this.content = content;
-    }
-}
 
 class LimitRule extends Rule {
     private int expireTime;

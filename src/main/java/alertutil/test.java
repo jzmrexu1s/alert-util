@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 public class test {
     public static void main(String[] args) throws InterruptedException {
         remove_test();
-        // func(id, content, timelimit, quantitylimit)
     }
 
     public static void remove_test() throws InterruptedException {
@@ -14,6 +13,10 @@ public class test {
 //        System.out.println("(In the default rule, alert will be removed in 1 sec after it was added to a list of alerts. )");
 //        a1.start();
         System.out.println("------0.0 sec------");
+        System.out.println("Run daemon thread. ");
+        Thread d = new alert_refresh();
+        d.setDaemon(true);
+        d.start();
         System.out.println("Run thread t1 to add an alert with key t1, using the new rule. ");
         Thread t1 = new alert_invoker("t1", "Content of t1", 2000, 1);
         t1.start();
@@ -119,7 +122,14 @@ public class test {
     static class alert_refresh extends Thread {
         @Override
         public void run() {
-            AlertUtil.refresh();
+            while(true) {
+                AlertUtil.refresh();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) { break; }
+            }
+
+
         }
     }
 }
