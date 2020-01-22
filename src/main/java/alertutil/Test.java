@@ -2,7 +2,7 @@ package alertutil;
 
 import java.util.concurrent.TimeUnit;
 
-public class test {
+public class Test {
     public static void main(String[] args) throws InterruptedException {
         remove_test();
     }
@@ -128,8 +128,6 @@ public class test {
                     Thread.sleep(100);
                 } catch (InterruptedException e) { break; }
             }
-
-
         }
     }
 }
