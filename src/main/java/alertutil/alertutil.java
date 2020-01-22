@@ -35,12 +35,18 @@ class AlertUtilHandler {
     public static void addLimitAlert(String key, String content, int expireTime, int expireCount) {
         if (alerts.get(key) == null) {
             Rule rule = new LimitRule(expireTime, expireCount);
-            Alert alert = new Alert(rule, content);
-            alerts.put(key, (AlertInfo)alert);
+            AlertInfo alert = new AlertInfo(rule);
+            alerts.put(key, alert);
+            rule.action(content);
             System.out.println("addAlert: key= " + key + " " + "timestamp: " + alert.getTimeStamp());
-        } else {
+        }
+        else {
             AlertInfo alert = alerts.get(key);
-            alert.addCount();
+            Rule rule = alert.getRule();
+            if (!rule.checkReachCount(alert)) {
+                rule.action(content);
+                rule.setAlert(alert);
+            }
         }
         refresh();
     }
@@ -53,9 +59,6 @@ class AlertUtilHandler {
                 if (rule.checkRemove(alert)) {
                     alerts.remove(key);
                     System.out.println("Remove: alert with key " + key + " has been removed. ");
-                }
-                else if (!rule.checkReachCount(alert)) {
-                    rule.setAlert(alert);
                 }
             }
         } catch (Exception e) {e.printStackTrace();}
@@ -73,7 +76,7 @@ class AlertUtilHandler {
 abstract class Rule {
     public abstract boolean checkRemove(AlertInfo alert);        // If the alert should be removed from alerts
     public abstract boolean checkReachCount(AlertInfo alert);   // If the alert reaches its count limit
-    public abstract void action(Alert alert);                   // How to send email
+    public abstract void action(String content);                   // How to send email
     public abstract void setAlert(AlertInfo alert);             // How to update the params in an alert
 }
 
@@ -84,7 +87,7 @@ class AlertInfo {
     public AlertInfo(Rule rule) {
         this.rule = rule;
         this.timeStamp = System.currentTimeMillis();
-        this.count = 0;
+        this.count = 1;
     }
     public Rule getRule() { return rule; }
     public long getTimeStamp() { return timeStamp; }
@@ -125,8 +128,8 @@ class LimitRule extends Rule {
     }
 
     @Override
-    public void action(Alert alert) {
-        System.out.println("action: Should send an email right now. Content: " + alert.getContent());
+    public void action(String content) {
+        System.out.println("action: Should send an email right now. Content: " + content);
     }
 
     @Override
