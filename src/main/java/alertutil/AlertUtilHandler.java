@@ -2,28 +2,27 @@ package alertutil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 class AlertUtilHandler {
     private static Map<String, AlertInfo> alerts = new ConcurrentHashMap<String, AlertInfo>();
     private static volatile boolean refresherStarted = false;
     public static void initRefresher() {
         if (!refresherStarted) {
-            Thread t = new Thread() {
-                public void run() {
+            refresherStarted = true;
+            ExecutorService es = Executors.newFixedThreadPool(1);
+            Thread t = new Thread() { public void run() {
                     while(true) {
                         AlertUtil.refresh();
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) { break; }
+                        try { Thread.sleep(100); } catch (InterruptedException e) { break; }
                     }
                 }
             };
             t.setDaemon(true);
-            try {t.start();} catch (Exception e) {e.printStackTrace();}
-            refresherStarted = true;
+            es.submit(t);
             System.out.println("Refresher started. "); }
         }
-
 
     public void setAlerts(ConcurrentHashMap<String, AlertInfo> alerts) {
         AlertUtilHandler.alerts = alerts;
