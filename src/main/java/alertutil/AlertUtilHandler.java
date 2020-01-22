@@ -8,10 +8,10 @@ import java.util.concurrent.Executors;
 class AlertUtilHandler {
     private static Map<String, AlertInfo> alerts = new ConcurrentHashMap<String, AlertInfo>();
     private static volatile boolean refresherStarted = false;
+    private static ExecutorService es = Executors.newFixedThreadPool(1);
     public static void initRefresher() {
         if (!refresherStarted) {
             refresherStarted = true;
-            ExecutorService es = Executors.newFixedThreadPool(1);
             Thread t = new Thread() { public void run() {
                     while(true) {
                         AlertUtil.refresh();
