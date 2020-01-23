@@ -8,15 +8,7 @@ public class Test {
     }
 
     public static void remove_test() throws InterruptedException {
-//        Thread a1 = new ruleAdder("testRule", "Limit", new Object[]{2000});
-//        System.out.println("Run a thread to create new rule: The alert will be removed in 2 sec after it was added to a list of alerts. ");
-//        System.out.println("(In the default rule, alert will be removed in 1 sec after it was added to a list of alerts. )");
-//        a1.start();
         System.out.println("------0.0 sec------");
-//        System.out.println("Run daemon thread. ");
-//        Thread d = new alert_refresh();
-//        d.setDaemon(true);
-//        d.start();
         System.out.println("Run thread t1 to add an alert with key t1, using the new rule. ");
         Thread t1 = new alert_invoker("t1", "Content of t1", 2000, 1);
         t1.start();
@@ -74,27 +66,8 @@ public class Test {
     public static void basic_test() throws InterruptedException {
     }
 
-//    static class ruleAdder extends Thread {
-//        private String ruleName;
-//        private String ruleType;
-//        private Object[] params;
-//
-//        public ruleAdder(String ruleName, String ruleType, Object[] params) {
-//            this.ruleName = ruleName;
-//            this.ruleType = ruleType;
-//            this.params = params;
-//        }
-//
-//        @Override
-//        public void run() {
-//            AlertUtil a = AlertUtil.getInstance();
-//            a.addRule(ruleName, params);
-//        }
-//    }
-
     static class alert_invoker extends Thread {
         private String id;
-//        private String ruleName;
         private String content;
         private int timeLimit;
         private int countLimit = 1;
